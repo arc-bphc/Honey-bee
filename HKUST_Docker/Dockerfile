@@ -20,4 +20,24 @@ RUN apt-get update \
     && chmod 0440 /etc/sudoers.d/${USERNAME} \
     && rm -rf /var/lib/apt/lists/*
 
-COPY setup.sh /setup.sh
+USER ${USERNAME}
+
+WORKDIR /home/${USERNAME}/
+
+RUN git clone -b v2.7.1 https://github.com/stevengj/nlopt.git \
+    && cd nlopt \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make \
+    && sudo make install
+
+RUN mkdir catkin_ws catkin_ws/src \
+    && cd catkin_ws/src \
+    && git clone https://github.com/HKUST-Aerial-Robotics/Fast-Planner.git
+
+WORKDIR /home/${USERNAME}/catkin_ws
+
+RUN bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && catkin_make"
+
+RUN echo "source /home/${USERNAME}/catkin_ws/devel/setup.bash" >> ~/.bashrc
